@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import './App.css';
 import {ICard, IDeck, PlayingCard, Suit, TexasHoldEmPokerGameType} from 'typedeck';
+import Modal from 'react-modal';
 
 
 const suitMap = '♣♠♦♥';
@@ -9,7 +10,7 @@ const nameMap = 'A234457890JQK'
 
 const cardValue = (card: ICard) => nameMap[card.cardName] === '0' ? 10 : nameMap[card.cardName];
 
-function Card(card: PlayingCard) {
+function TextCard(card: PlayingCard) {
     const suit = card.suit;
     const color = ((suit === Suit.Clubs || suit === Suit.Spades) ? 'black' : 'red')
     return <span style={{color}} className="card">
@@ -19,13 +20,22 @@ function Card(card: PlayingCard) {
 
 const ROWS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 const BLANKS = ROWS.map(i => new Array(i + 1).fill(0));
+const HAND = [45, 46, 47, 48, 49, 50, 51]
 
+type CardIndex = number;
 
+function HandCard({used, ix, clickCard, cards} :
+{used: any[], ix: number, clickCard: (offset: number) => () => void, cards: PlayingCard[]})
+{
+    return <span className={used[ix] ? "blocked" : "card available"} onClick={clickCard(ix)}>{used[ix] ?
+        <span className="card"/> : TextCard(cards[ix])}</span>;
+}
 
 function App() {
     const [deck, setDeck] = useState<IDeck>();
     const [used, setUsed] = useState(new Array(52).fill(false));
-    const [stack, setStack] = useState<number[]>([]);
+    const [stack, setStack] = useState<CardIndex[]>([]);
+    const [modalOpen, setModalOpen] = useState(false);
 
     const isAvailable = (row : number, col : number) => {
         if(row > 7)
@@ -34,6 +44,12 @@ function App() {
         return used[r+col] && used[r+1+col]
     }
 
+    const undo = () => {
+        const top = stack.pop()!;
+        const u = [...used];
+        u[top] = false;
+        setUsed(u);
+    }
     function shuffle() {
         const d = new TexasHoldEmPokerGameType().createDeck();
         d.shuffle();
@@ -63,35 +79,41 @@ function App() {
                 {ROWS.map((row) =>
                     <div className="row" key={row}>
                         {BLANKS[row].map((x, i) => {
-                            const offset = row*(row+1)/2+i
-                            if(used[offset]) {
+                            const offset = row * (row + 1) / 2 + i
+                            if (used[offset]) {
                                 return <span key={i} className="card"/>
                             }
                             return <span key={i}
                                          className={isAvailable(row, i) ? "available" : "blocked"}
                                          onClick={isAvailable(row, i) ? clickCard(offset) : undefined}
                             >
-                                {Card(cards[offset])}
-                            </span>})
+                                {TextCard(cards[offset])}
+                            </span>
+                        })
                         }
                     </div>
                 )}
             </div>
             <hr/>
             <div className="hand">
-                <span className={used[45] ? "blocked" : "available"} onClick={clickCard(45)}>{used[45] ? <span className="card"/> : Card(cards[45])}</span>
-                {Card(cards[46])}
-                {Card(cards[47])}
-                {Card(cards[48])}
-                {Card(cards[49])}
-                {Card(cards[50])}
-                {Card(cards[51])}
+                {HAND.map(ix =>
+                <HandCard
+                    used={used}
+                    key={ix}
+                    ix={ix}
+                    clickCard={clickCard}
+                    cards={cards}/>)}
             </div>
             <hr/>
             <div>
-                {stack.length === 0 ? <span/> : Card(cards[stack[stack.length-1]])}
+                {stack.length === 0 ? <span/> : TextCard(cards[stack[stack.length - 1]])}
             </div>
-            <button onClick={shuffle}>Shuffle</button>
+            <button onClick={undo} disabled={stack.length === 0}>Undo</button>
+            <Modal
+                isOpen={modalOpen}
+                onRequestClose={ () => setModalOpen(false)}>
+                <button onClick={() => setModalOpen(false)}>CLose</button>
+            </Modal>
         </div>
     );
 }

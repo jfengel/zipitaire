@@ -9,8 +9,9 @@
 
 .card {
   padding: 4px;
-  width: 1.5em;
+  width: 2em;
   display: inline-block;
+  box-sizing: border-box;
 }
 
 .tableau {
