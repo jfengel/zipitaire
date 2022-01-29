@@ -1,0 +1,21 @@
+.available {
+  background: aquamarine;
+  cursor: pointer;
+}
+
+.available:hover {
+  border: purple double;
+}
+
+.card {
+  padding: 4px;
+  width: 1.5em;
+  display: inline-block;
+}
+
+.tableau {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+
+}
