@@ -5,6 +5,7 @@
 
 .available:hover {
   border: purple double;
+  user-select: none;
 }
 
 .card {

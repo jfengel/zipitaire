@@ -31,6 +31,7 @@ function HandCard({used, ix, clickCard, cards} :
         <span className="card"/> : TextCard(cards[ix])}</span>;
 }
 
+
 function App() {
     const [deck, setDeck] = useState<IDeck>();
     const [used, setUsed] = useState(new Array(52).fill(false));
@@ -54,11 +55,18 @@ function App() {
         const d = new TexasHoldEmPokerGameType().createDeck();
         d.shuffle();
         setDeck(d);
+        setUsed(new Array(52).fill(false));
     }
 
     useEffect(() => {
         shuffle();
     }, []);
+
+    useEffect(() => {
+        if(used[0]) {
+            setModalOpen(true);
+        }
+    }, [used]);
 
     if (!deck)
         return null;
@@ -83,7 +91,8 @@ function App() {
                             if (used[offset]) {
                                 return <span key={i} className="card"/>
                             }
-                            return <span key={i}
+                            return
+                            <span key={i}
                                          className={isAvailable(row, i) ? "available" : "blocked"}
                                          onClick={isAvailable(row, i) ? clickCard(offset) : undefined}
                             >
@@ -112,7 +121,8 @@ function App() {
             <Modal
                 isOpen={modalOpen}
                 onRequestClose={ () => setModalOpen(false)}>
-                <button onClick={() => setModalOpen(false)}>CLose</button>
+                You win!
+                <button onClick={() => setModalOpen(false)}>New game</button>
             </Modal>
         </div>
     );
