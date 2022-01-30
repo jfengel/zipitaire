@@ -13,7 +13,7 @@ const cardValue = (card: ICard) => nameMap[card.cardName] === '0' ? 10 : nameMap
 function TextCard(card: PlayingCard) {
     const suit = card.suit;
     const color = ((suit === Suit.Clubs || suit === Suit.Spades) ? 'black' : 'red')
-    return <span style={{color}} className="card">
+    return <span style={{color}}>
             {cardValue(card) + suitMap[suit]}
         </span>
 }
@@ -27,11 +27,13 @@ type CardIndex = number;
 function HandCard({used, ix, clickCard, cards} :
 {used: any[], ix: number, clickCard: ((offset: number) => () => void) | undefined, cards: PlayingCard[]})
 {
-    return <span className={!clickCard ? "blocked" : "card available"}
+    const className = clickCard ?  "card available" : "card blocked";
+    return <span className={className}
                  tabIndex={clickCard && 0}
                  onKeyPress={clickCard && clickCard(ix)}
-                 onClick={clickCard && clickCard(ix)}>{used[ix] ?
-        <span className="card"/> : TextCard(cards[ix])}</span>;
+                 onClick={clickCard && clickCard(ix)}>
+        {used[ix] ? <span/> : TextCard(cards[ix])}
+    </span>;
 }
 
 
@@ -42,10 +44,12 @@ function App() {
     const [modalOpen, setModalOpen] = useState(false);
 
     const isAvailable = (row : number, col : number) => {
+        if(used[row * (row+1) / 2 + col])
+            return false;
         if(row > 7)
             return true;
-        const r = (row+1)* (row+2) / 2;
-        return used[r+col] && used[r+1+col]
+        const ix = (row+1)* (row+2) / 2;
+        return used[ix+col] && used[ix+1+col]
     }
 
     const undo = () => {
@@ -54,11 +58,15 @@ function App() {
         u[top] = false;
         setUsed(u);
     }
+    const reset = () => {
+        setStack([])
+        setUsed(new Array(52).fill(false));
+    }
     function shuffle() {
         const d = new TexasHoldEmPokerGameType().createDeck();
         d.shuffle();
         setDeck(d);
-        setUsed(new Array(52).fill(false));
+        reset();
     }
 
     useEffect(() => {
@@ -91,13 +99,10 @@ function App() {
                     <div className="row" key={row}>
                         {BLANKS[row].map((x, col) => {
                             const offset = row * (row + 1) / 2 + col
-                            if (used[offset]) {
-                                return <span key={col} className="card"/>
-                            }
                             return <HandCard
                                 used={used}
-                                key={col}
-                                ix={row*(row+1)/2 + col}
+                                key={offset}
+                                ix={offset}
                                 clickCard={isAvailable(row, col) ? clickCard : undefined}
                                 cards={cards}/>
                         })
@@ -112,7 +117,7 @@ function App() {
                     used={used}
                     key={ix}
                     ix={ix}
-                    clickCard={clickCard}
+                    clickCard={used[ix] ? undefined : clickCard}
                     cards={cards}/>)}
             </div>
             <hr/>
@@ -120,6 +125,7 @@ function App() {
                 {stack.length === 0 ? <span/> : TextCard(cards[stack[stack.length - 1]])}
             </div>
             <button onClick={undo} disabled={stack.length === 0}>Undo</button>
+            <button onClick={reset} disabled={stack.length === 0}>Reset</button>
             <Modal
                 isOpen={modalOpen}
                 onRequestClose={ () => setModalOpen(false)}>
