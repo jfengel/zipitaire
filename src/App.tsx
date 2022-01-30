@@ -93,7 +93,9 @@ function App() {
     }
 
     return (
-        <div className="Zipitaire">
+        <div className="Zipitaire"
+             onAuxClick={e => e.button === 1 && undo()}
+             onKeyUp={e => e.ctrlKey && e.key === 'z' && undo()}>
             <div className="tableau">
                 {ROWS.map((row) =>
                     <div className="row" key={row}>
