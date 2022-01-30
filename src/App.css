@@ -3,7 +3,7 @@
   cursor: pointer;
 }
 
-.available:hover {
+.available:hover, .available:focus {
   border: purple double;
   user-select: none;
 }

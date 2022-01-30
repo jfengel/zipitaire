@@ -25,9 +25,12 @@ const HAND = [45, 46, 47, 48, 49, 50, 51]
 type CardIndex = number;
 
 function HandCard({used, ix, clickCard, cards} :
-{used: any[], ix: number, clickCard: (offset: number) => () => void, cards: PlayingCard[]})
+{used: any[], ix: number, clickCard: ((offset: number) => () => void) | undefined, cards: PlayingCard[]})
 {
-    return <span className={used[ix] ? "blocked" : "card available"} onClick={clickCard(ix)}>{used[ix] ?
+    return <span className={!clickCard ? "blocked" : "card available"}
+                 tabIndex={clickCard && 0}
+                 onKeyPress={clickCard && clickCard(ix)}
+                 onClick={clickCard && clickCard(ix)}>{used[ix] ?
         <span className="card"/> : TextCard(cards[ix])}</span>;
 }
 
@@ -86,17 +89,17 @@ function App() {
             <div className="tableau">
                 {ROWS.map((row) =>
                     <div className="row" key={row}>
-                        {BLANKS[row].map((x, i) => {
-                            const offset = row * (row + 1) / 2 + i
+                        {BLANKS[row].map((x, col) => {
+                            const offset = row * (row + 1) / 2 + col
                             if (used[offset]) {
-                                return <span key={i} className="card"/>
+                                return <span key={col} className="card"/>
                             }
-                            return <span key={i}
-                                         className={isAvailable(row, i) ? "available" : "blocked"}
-                                         onClick={isAvailable(row, i) ? clickCard(offset) : undefined}
-                            >
-                                {TextCard(cards[offset])}
-                            </span>
+                            return <HandCard
+                                used={used}
+                                key={col}
+                                ix={row*(row+1)/2 + col}
+                                clickCard={isAvailable(row, col) ? clickCard : undefined}
+                                cards={cards}/>
                         })
                         }
                     </div>
@@ -121,7 +124,10 @@ function App() {
                 isOpen={modalOpen}
                 onRequestClose={ () => setModalOpen(false)}>
                 You win!
-                <button onClick={() => setModalOpen(false)}>New game</button>
+                <button onClick={() => {
+                    setModalOpen(false)
+                    shuffle()
+                }}>New game</button>
             </Modal>
         </div>
     );
