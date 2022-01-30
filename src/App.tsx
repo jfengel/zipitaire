@@ -91,8 +91,7 @@ function App() {
                             if (used[offset]) {
                                 return <span key={i} className="card"/>
                             }
-                            return
-                            <span key={i}
+                            return <span key={i}
                                          className={isAvailable(row, i) ? "available" : "blocked"}
                                          onClick={isAvailable(row, i) ? clickCard(offset) : undefined}
                             >
