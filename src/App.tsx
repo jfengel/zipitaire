@@ -6,7 +6,7 @@ import Modal from 'react-modal';
 
 const suitMap = '♣♠♦♥';
 
-const nameMap = 'A234457890JQK'
+const nameMap = 'A234567890JQK'
 
 const cardValue = (card: ICard) => nameMap[card.cardName] === '0' ? 10 : nameMap[card.cardName];
 
@@ -23,6 +23,101 @@ const BLANKS = ROWS.map(i => new Array(i + 1).fill(0));
 const HAND = [45, 46, 47, 48, 49, 50, 51]
 
 type CardIndex = number;
+
+type GameState = {
+    deck : IDeck;
+    used : boolean[];
+    stack : CardIndex[];
+}
+
+const solve = (state : GameState) => {
+    const avail = [];
+    for(let row = 8; row <= 9; row++) {
+        for(let col = 0; col < (row === 8 ? 9 : 7); col++) {
+            avail.push([row, col]);
+        }
+    }
+    return solveRecurse(state, avail, 0);
+}
+
+function getIx(row: number, col: number) {
+    return (row * (row + 1) / 2) + col;
+}
+
+const isAvailable = (row : number, col : number, state : GameState) => {
+    const {used} = state;
+    if(used[row * (row+1) / 2 + col])
+        return false;
+    if(row > 7)
+        return true;
+    const ix = (row+1)* (row+2) / 2;
+    return used[ix+col] && used[ix+1+col]
+}
+
+
+const isLegal = (row : number, col : number, state : GameState) => {
+    if(!isAvailable(row, col, state)) {
+        return false;
+    }
+
+    if(state.stack.length === 0) {
+        return true;
+    }
+    const ix = getIx(row, col);
+    const cards = state.deck.getCards();
+    const top = cards[state.stack[state.stack.length-1]];
+    const val = state.deck.getCards()[ix].cardName;
+
+    if(val === top.cardName+1
+        || val === top.cardName-1
+        || top.cardName === 0
+        || top.cardName === 12)
+        return true;
+
+    return false;
+}
+
+const solveRecurse = (state : GameState, avail : number[][], depth : number) : CardIndex[] | null => {
+    if(depth > 2) {
+        return [];
+    }
+    if(state.used[0]) {
+        return [];
+    }
+    for(let i = 0; i < avail.length; i++) {
+        const card = avail[i];
+        const [row, col] = card;
+        if(isLegal(row, col, state)) {
+            const newAvail = [...avail]
+            avail.splice(i);
+            if(col > 0) {
+                if(state.used[getIx(row, col-1)]) {
+                    avail.push([row, col-1])
+                }
+            }
+            if(col < row) {
+                if(state.used[getIx(row, col+1)]) {
+                    avail.push([row, col])
+                }
+            }
+            const ix = getIx(row, col);
+            const stack = [...state.stack];
+            stack.push(ix);
+            const used = [...state.used];
+            used[ix] = true;
+            const newState = {...state,
+                used,
+                stack
+            }
+            const solution = solveRecurse(newState, newAvail,depth+1);
+            if(solution) {
+                solution.push(ix);
+                return solution;
+            }
+        }
+    }
+    return null;
+}
 
 function HandCard({used, ix, clickCard, cards} :
 {used: any[], ix: number, clickCard: ((offset: number) => () => void) | undefined, cards: PlayingCard[]})
@@ -42,15 +137,6 @@ function App() {
     const [used, setUsed] = useState(new Array(52).fill(false));
     const [stack, setStack] = useState<CardIndex[]>([]);
     const [modalOpen, setModalOpen] = useState(false);
-
-    const isAvailable = (row : number, col : number) => {
-        if(used[row * (row+1) / 2 + col])
-            return false;
-        if(row > 7)
-            return true;
-        const ix = (row+1)* (row+2) / 2;
-        return used[ix+col] && used[ix+1+col]
-    }
 
     const undo = () => {
         const top = stack.pop()!;
@@ -92,9 +178,14 @@ function App() {
         setStack(s);
     }
 
+    const state = {
+        used,
+        stack,
+        deck
+    }
     return (
         <div className="Zipitaire"
-             onAuxClick={e => e.button === 1 && undo()}
+             onAuxClick={undo}
              onKeyUp={e => e.ctrlKey && e.key === 'z' && undo()}>
             <div className="tableau">
                 {ROWS.map((row) =>
@@ -105,7 +196,7 @@ function App() {
                                 used={used}
                                 key={offset}
                                 ix={offset}
-                                clickCard={isAvailable(row, col) ? clickCard : undefined}
+                                clickCard={isLegal(row, col, state) ? clickCard : undefined}
                                 cards={cards}/>
                         })
                         }
@@ -114,12 +205,12 @@ function App() {
             </div>
             <hr/>
             <div className="hand">
-                {HAND.map(ix =>
+                {HAND.map((ix, i) =>
                 <HandCard
                     used={used}
                     key={ix}
                     ix={ix}
-                    clickCard={used[ix] ? undefined : clickCard}
+                    clickCard={isLegal(9, i, state) ? clickCard : undefined}
                     cards={cards}/>)}
             </div>
             <hr/>
