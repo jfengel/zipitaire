@@ -30,7 +30,7 @@ type GameState = {
     stack : CardIndex[];
 }
 
-const solve = (state : GameState) => {
+const solve = (state : GameState) : CardIndex[] | null => {
     const avail = [];
     for(let row = 8; row <= 9; row++) {
         for(let col = 0; col < (row === 8 ? 9 : 7); col++) {
@@ -59,6 +59,9 @@ const isLegal = (row : number, col : number, state : GameState) => {
     if(!isAvailable(row, col, state)) {
         return false;
     }
+    if(row > 8) {
+        return true;
+    }
 
     if(state.stack.length === 0) {
         return true;
@@ -71,14 +74,15 @@ const isLegal = (row : number, col : number, state : GameState) => {
     if(val === top.cardName+1
         || val === top.cardName-1
         || top.cardName === 0
-        || top.cardName === 12)
+        || top.cardName === 12) {
         return true;
+    }
 
     return false;
 }
 
 const solveRecurse = (state : GameState, avail : number[][], depth : number) : CardIndex[] | null => {
-    if(depth > 2) {
+    if(depth > 11) {
         return [];
     }
     if(state.used[0]) {
@@ -119,15 +123,23 @@ const solveRecurse = (state : GameState, avail : number[][], depth : number) : C
     return null;
 }
 
+const preventDefault = (f : any) => (e : any) => {
+    console.info("received", e, f);
+    e.preventDefault();
+    e.stopPropagation();
+    f(e);
+    return false;
+}
+
 function HandCard({used, ix, clickCard, cards} :
-{used: any[], ix: number, clickCard: ((offset: number) => () => void) | undefined, cards: PlayingCard[]})
+{used?: boolean[], ix: number, clickCard?: ((offset: number) => () => void), cards: PlayingCard[]})
 {
     const className = clickCard ?  "card available" : "card blocked";
     return <span className={className}
                  tabIndex={clickCard && 0}
                  onKeyPress={clickCard && clickCard(ix)}
                  onClick={clickCard && clickCard(ix)}>
-        {used[ix] ? <span/> : TextCard(cards[ix])}
+        {used && used[ix] ? <span/> : TextCard(cards[ix])}
     </span>;
 }
 
@@ -136,6 +148,7 @@ function App() {
     const [deck, setDeck] = useState<IDeck>();
     const [used, setUsed] = useState(new Array(52).fill(false));
     const [stack, setStack] = useState<CardIndex[]>([]);
+    const [solution, setSolution] = useState<CardIndex[] | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
 
     const undo = () => {
@@ -185,7 +198,9 @@ function App() {
     }
     return (
         <div className="Zipitaire"
-             onAuxClick={undo}
+            onContextMenu={() => false}
+             onContextMenuCapture={preventDefault(() => {})}
+             onAuxClick={e => { e.preventDefault(); e.stopPropagation(); undo();}}
              onKeyUp={e => e.ctrlKey && e.key === 'z' && undo()}>
             <div className="tableau">
                 {ROWS.map((row) =>
@@ -219,6 +234,10 @@ function App() {
             </div>
             <button onClick={undo} disabled={stack.length === 0}>Undo</button>
             <button onClick={reset} disabled={stack.length === 0}>Reset</button>
+            <button onClick={() => setSolution(solve(state))}>Solve</button>
+            <div>
+                {solution?.map(card => <HandCard key={card} ix={card} cards={cards}/>)}
+            </div>
             <Modal
                 isOpen={modalOpen}
                 onRequestClose={ () => setModalOpen(false)}>
