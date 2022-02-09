@@ -172,7 +172,11 @@ function App() {
             </div>
             <button onClick={undo} disabled={stack.length === 0}>Undo</button>
             <button onClick={reset} disabled={stack.length === 0}>Reset</button>
-            <button onClick={() => setSolution(solve(state))}>Solve</button>
+            <button onClick={() => {
+                setSolution("working")
+                setTimeout(() =>
+                setSolution(solve(state)), 0);
+            }}>Solve</button>
             <div>
                 {solution === "unknown" ? null
                     : solution === "none" ? "No solution found"
