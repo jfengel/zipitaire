@@ -30,14 +30,12 @@ type GameState = {
     stack : CardIndex[];
 }
 
-const solve = (state : GameState) : CardIndex[] | null => {
-    const avail = [];
-    for(let row = 8; row <= 9; row++) {
-        for(let col = 0; col < (row === 8 ? 9 : 7); col++) {
-            avail.push([row, col]);
-        }
-    }
-    return solveRecurse(state, avail, 0);
+const solve = (state : GameState) : SolutionState => {
+    const solution = solveRecurse(state, 0);
+    if(typeof solution === "string")
+        return solution;
+    else
+        return solution.reverse();
 }
 
 function getIx(row: number, col: number) {
@@ -71,60 +69,53 @@ const isLegal = (row : number, col : number, state : GameState) => {
     const top = cards[state.stack[state.stack.length-1]];
     const val = state.deck.getCards()[ix].cardName;
 
-    if(val === top.cardName+1
-        || val === top.cardName-1
+    return val === top.cardName + 1
+        || val === top.cardName - 1
         || top.cardName === 0
-        || top.cardName === 12) {
-        return true;
-    }
+        || top.cardName === 12;
 
-    return false;
+
 }
 
-const solveRecurse = (state : GameState, avail : number[][], depth : number) : CardIndex[] | null => {
-    if(depth > 11) {
+const solveRecurse = (state : GameState, depth : number) : SolutionState => {
+    if(depth > 40) {
         return [];
     }
     if(state.used[0]) {
         return [];
     }
-    for(let i = 0; i < avail.length; i++) {
-        const card = avail[i];
-        const [row, col] = card;
+    let row = 0;
+    let col = 0;
+    for(let i = 0; i < 52; i++) {
         if(isLegal(row, col, state)) {
-            const newAvail = [...avail]
-            avail.splice(i);
-            if(col > 0) {
-                if(state.used[getIx(row, col-1)]) {
-                    avail.push([row, col-1])
-                }
+            const top = state.stack[state.stack.length-1];
+            if(i >= 45 && top >= 45) {
+                continue;   // You never need to play two hand cards in a row
             }
-            if(col < row) {
-                if(state.used[getIx(row, col+1)]) {
-                    avail.push([row, col])
-                }
-            }
-            const ix = getIx(row, col);
-            const stack = [...state.stack];
-            stack.push(ix);
-            const used = [...state.used];
-            used[ix] = true;
-            const newState = {...state,
-                used,
-                stack
-            }
-            const solution = solveRecurse(newState, newAvail,depth+1);
-            if(solution) {
-                solution.push(ix);
+
+            state.stack.push(i);
+            state.used[i] = true;
+
+
+            const solution = solveRecurse(state,depth+1);
+            state.stack.pop();
+            state.used[i] = false;
+
+            if(typeof solution === "object") {
+                solution.push(i);
                 return solution;
             }
         }
+        col++;
+        if(col > row) {
+            row++;
+            col = 0;
+        }
     }
-    return null;
+    return "none";
 }
 
 const preventDefault = (f : any) => (e : any) => {
-    console.info("received", e, f);
     e.preventDefault();
     e.stopPropagation();
     f(e);
@@ -143,12 +134,13 @@ function HandCard({used, ix, clickCard, cards} :
     </span>;
 }
 
+type SolutionState = CardIndex[] | "unknown" | "none" | "working";
 
 function App() {
     const [deck, setDeck] = useState<IDeck>();
     const [used, setUsed] = useState(new Array(52).fill(false));
     const [stack, setStack] = useState<CardIndex[]>([]);
-    const [solution, setSolution] = useState<CardIndex[] | null>(null);
+    const [solution, setSolution] = useState<SolutionState>("unknown");
     const [modalOpen, setModalOpen] = useState(false);
 
     const undo = () => {
@@ -236,7 +228,11 @@ function App() {
             <button onClick={reset} disabled={stack.length === 0}>Reset</button>
             <button onClick={() => setSolution(solve(state))}>Solve</button>
             <div>
-                {solution?.map(card => <HandCard key={card} ix={card} cards={cards}/>)}
+                {solution === "unknown" ? null
+                    : solution === "none" ? "No solution found"
+                    : solution === "working" ? "Working..."
+                    : solution.map(card => <HandCard key={card} ix={card} cards={cards}/>)
+                    }
             </div>
             <Modal
                 isOpen={modalOpen}
