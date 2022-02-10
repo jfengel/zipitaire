@@ -8,6 +8,15 @@
   user-select: none;
 }
 
+.hand, .pile {
+  display: table;
+  margin: auto;
+}
+
+.instructions {
+  max-width: 40em;
+}
+
 .card {
   margin: 4px;
   width: 2em;
@@ -21,4 +30,8 @@
   align-items: center;
   flex-direction: column;
 
+}
+
+.Zipitaire {
+  position: absolute;
 }

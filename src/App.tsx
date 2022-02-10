@@ -137,8 +137,8 @@ function App() {
     return (
         <div className="Zipitaire"
             onContextMenu={() => false}
-             onContextMenuCapture={preventDefault(() => {})}
-             onAuxClick={e => { e.preventDefault(); e.stopPropagation(); undo();}}
+             // onContextMenuCapture={preventDefault(() => {})}
+             onAuxClick={preventDefault(undo)}
              onKeyUp={e => e.ctrlKey && e.key === 'z' && undo()}>
             <div className="tableau">
                 {ROWS.map((row) =>
@@ -167,7 +167,7 @@ function App() {
                     cards={cards}/>)}
             </div>
             <hr/>
-            <div>
+            <div className="pile">
                 {stack.length === 0 ? <span/> : TextCard(cards[stack[stack.length - 1]])}
             </div>
             <button onClick={undo} disabled={stack.length === 0}>Undo</button>
@@ -183,6 +183,15 @@ function App() {
                     : solution === "working" ? "Working..."
                     : solution.map(card => <HandCard key={card} ix={card} cards={cards}/>)
                     }
+            </div>
+            <div className="instructions">
+                <h3>Instructions</h3>
+                <p>You may begin with any card in the bottom row of the pyramid
+                    or in your hand (below the pyramid).</p>
+                <p>Continue with any uncovered card that is 1 higher or 1 lower than the
+                top of the pile. If the top of the pile is an Ace or King, you may
+                play any uncovered card.</p>
+                <p>You win when you have cleared the pyramid.</p>
             </div>
             <Modal
                 isOpen={modalOpen}
