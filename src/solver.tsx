@@ -9,7 +9,7 @@ export const solve = (state: GameState): SolutionState => {
         return solution.reverse();
 }
 const solveRecurse = (state: GameState, depth: number): SolutionState => {
-    if (depth > 40) {
+    if (depth > 44) {
         return [];
     }
     if (state.used[0]) {

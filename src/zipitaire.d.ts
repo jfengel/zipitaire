@@ -1,8 +1,6 @@
-import {IDeck} from "typedeck";
-
 export type CardIndex = number;
 export type GameState = {
-    deck: IDeck;
+    deck: ICard[];
     used: boolean[];
     stack: CardIndex[];
 }

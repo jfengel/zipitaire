@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import './App.css';
-import {ICard, IDeck, PlayingCard, Suit, TexasHoldEmPokerGameType} from 'typedeck';
+import {ICard, PlayingCard, Suit, TexasHoldEmPokerGameType} from 'typedeck';
 import Modal from 'react-modal';
 import {CardIndex, GameState, SolutionState} from "./zipitaire";
 import {solve} from "./solver";
@@ -51,9 +51,9 @@ export const isLegal = (row : number, col : number, state : GameState) => {
         return true;
     }
     const ix = getIx(row, col);
-    const cards = state.deck.getCards();
+    const cards = state.deck;
     const top = cards[state.stack[state.stack.length-1]];
-    const val = state.deck.getCards()[ix].cardName;
+    const val = state.deck[ix].cardName;
 
     return val === top.cardName + 1
         || val === top.cardName - 1
@@ -83,7 +83,7 @@ function HandCard({used, ix, clickCard, cards} :
 }
 
 function App() {
-    const [deck, setDeck] = useState<IDeck>();
+    const [deck, setDeck] = useState<ICard[]>();
     const [used, setUsed] = useState(new Array(52).fill(false));
     const [stack, setStack] = useState<CardIndex[]>([]);
     const [solution, setSolution] = useState<SolutionState>("unknown");
@@ -102,7 +102,7 @@ function App() {
     function shuffle() {
         const d = new TexasHoldEmPokerGameType().createDeck();
         d.shuffle();
-        setDeck(d);
+        setDeck(d.getCards());
         reset();
     }
 
@@ -118,7 +118,7 @@ function App() {
 
     if (!deck)
         return null;
-    const cards = deck.getCards() as PlayingCard[];
+    const cards = deck as PlayingCard[];
 
     const clickCard = (offset : number) => () => {
         const u = [...used];
