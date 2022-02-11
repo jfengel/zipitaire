@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import './App.css';
 import {ICard, PlayingCard, Suit, TexasHoldEmPokerGameType} from 'typedeck';
 import Modal from 'react-modal';
@@ -99,16 +99,16 @@ function App() {
         setStack([])
         setUsed(new Array(52).fill(false));
     }
-    function shuffle() {
+    const shuffle = useCallback(() => {
         const d = new TexasHoldEmPokerGameType().createDeck();
         d.shuffle();
         setDeck(d.getCards());
         reset();
-    }
+    }, [])
 
     useEffect(() => {
         shuffle();
-    }, []);
+    }, [shuffle]);
 
     useEffect(() => {
         if(used[0]) {
