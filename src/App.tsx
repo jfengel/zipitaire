@@ -137,7 +137,7 @@ function App() {
     return (
         <div className="Zipitaire"
             onContextMenu={() => false}
-             // onContextMenuCapture={preventDefault(() => {})}
+             onContextMenuCapture={preventDefault(() => {})}
              onAuxClick={preventDefault(undo)}
              onKeyUp={e => e.ctrlKey && e.key === 'z' && undo()}>
             <div className="tableau">
